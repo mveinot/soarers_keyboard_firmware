@@ -1,0 +1,14 @@
+# Generated firmware and host tools
+/build/
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# macOS metadata
+.DS_Store
+
+# Transient Ghidra project state
+*.lock
+*.lock~
+*.bak
