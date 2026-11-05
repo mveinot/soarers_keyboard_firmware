@@ -76,3 +76,16 @@ keyboard-side behavior has yet been tested. macOS also exposed a
 `kUSBFailedRemoteWake` property; remote-wakeup behavior remains unimplemented
 and must be investigated before power-management support can be considered
 complete.
+
+### Diagnostic endpoint result, 2026-11-05
+
+The reconstructed main loop now sends startup, heartbeat, raw keyboard byte,
+and framing-error records through endpoint 3, the 32-byte vendor HID input
+interface. A hardware test confirmed recurring heartbeat reports in the macOS
+reader.
+
+The original non-control endpoint writers store `0x3a` in `UEINTX` after
+filling an IN packet. This clears both `TXINI` and `FIFOCON`, releasing the
+bank to the USB controller. The endpoint-zero `0xfe` acknowledgement is not
+interchangeable: using it on endpoint 3 resulted in a correctly enumerated HID
+interface that delivered no reports.

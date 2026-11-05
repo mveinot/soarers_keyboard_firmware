@@ -15,6 +15,8 @@ enum {
     DEBUG_REPORT_MAGIC_1 = 'R',
     DEBUG_REPORT_VERSION = 1,
     DEBUG_EVENT_STARTUP = 0x80,
+    DEBUG_EVENT_HEARTBEAT = 0x81,
+    DEBUG_HEARTBEAT_INTERVAL_MS = 1000,
 };
 
 static keyboard_protocol_t default_protocol(void)
@@ -47,6 +49,7 @@ int main(void)
     uint8_t sequence = 0;
     uint8_t report[USB_VENDOR_REPORT_SIZE];
     bool report_pending = true;
+    uint16_t next_heartbeat = DEBUG_HEARTBEAT_INTERVAL_MS;
 
     usb_init();
     keyboard_receive_initialize(protocol);
@@ -55,13 +58,20 @@ int main(void)
 
     for (;;) {
         if (report_pending) {
-            report_pending = !usb_vendor_send(report);
+            if (usb_vendor_send(report)) {
+                report_pending = false;
+                next_heartbeat = usb_milliseconds() + DEBUG_HEARTBEAT_INTERVAL_MS;
+            }
             continue;
         }
 
         keyboard_event_t event;
         if (keyboard_receive_take_event(&event)) {
             prepare_debug_report(report, sequence++, protocol, event.type, event.value);
+            report_pending = true;
+        }
+        else if ((int16_t)(usb_milliseconds() - next_heartbeat) >= 0) {
+            prepare_debug_report(report, sequence++, protocol, DEBUG_EVENT_HEARTBEAT, 0);
             report_pending = true;
         }
     }

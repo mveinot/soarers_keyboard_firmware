@@ -60,7 +60,7 @@ all Intel HEX checksums and bounds, the USB interrupt and timer vector targets,
 and byte-for-byte equality of the recovered endpoint table and all nine USB
 descriptor objects against the original binary.
 
-The current PS/2 diagnostic image occupies 3,958 programmed bytes. That small
+The current PS/2 diagnostic image occupies 4,064 programmed bytes. That small
 size reflects its limited scope; it is not evidence that the original
 14,414-byte firmware has been fully recovered.
 
@@ -166,3 +166,19 @@ make debug-reader
 macOS requires Input Monitoring permission for the terminal or application
 running the reader. Without it, opening the HID interface fails with
 `kIOReturnNotPermitted` (`0xe00002e2`).
+
+### Hardware result, 2026-11-05
+
+The diagnostic image was uploaded to a Pro Micro-style ATmega32U4 clone and
+enumerated with all four recovered HID interfaces. The reader receives a
+versioned heartbeat report every second:
+
+```text
+sequence=1 protocol=PS/2 event=heartbeat value=0x00
+```
+
+This verifies USB SOF timing, main-loop event consumption, endpoint 3 input
+reports, and the macOS reader path. Non-control IN endpoints must release their
+FIFO bank with the original firmware's `UEINTX = 0x3a` sequence; clearing only
+`TXINI`, as endpoint zero does, leaves `FIFOCON` asserted and prevents reports
+from reaching the host.

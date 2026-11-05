@@ -28,6 +28,7 @@ static const char *event_name(uint8_t event)
     case 7: return "transmit-complete";
     case 8: return "transmit-not-acknowledged";
     case 0x80: return "startup";
+    case 0x81: return "heartbeat";
     default: return "unknown";
     }
 }

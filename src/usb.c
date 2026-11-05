@@ -65,6 +65,7 @@ static const endpoint_configuration_t endpoint_configurations[5] PROGMEM = {
 };
 
 static volatile uint8_t configuration_value;
+static volatile uint16_t millisecond_count;
 static uint8_t idle_rate[4];
 static uint8_t protocol_value[4] = {1, 1, 1, 1};
 
@@ -367,6 +368,15 @@ uint8_t usb_configuration(void)
     return configuration_value;
 }
 
+uint16_t usb_milliseconds(void)
+{
+    const uint8_t saved_status = SREG;
+    cli();
+    const uint16_t value = millisecond_count;
+    SREG = saved_status;
+    return value;
+}
+
 bool usb_vendor_send(const uint8_t report[USB_VENDOR_REPORT_SIZE])
 {
     if (configuration_value == 0) {
@@ -386,7 +396,8 @@ bool usb_vendor_send(const uint8_t report[USB_VENDOR_REPORT_SIZE])
     for (uint8_t index = 0; index < USB_VENDOR_REPORT_SIZE; ++index) {
         UEDATX = report[index];
     }
-    UEINTX = (uint8_t)~(1 << TXINI);
+    /* Match the original non-control IN endpoint bank release sequence. */
+    UEINTX = 0x3a;
     UENUM = saved_endpoint;
     SREG = saved_status;
     return true;
@@ -396,6 +407,10 @@ ISR(USB_GEN_vect)
 {
     const uint8_t flags = UDINT;
     UDINT = 0;
+
+    if (flags & (1 << SOFI)) {
+        ++millisecond_count;
+    }
 
     if (flags & (1 << EORSTI)) {
         UENUM = 0;

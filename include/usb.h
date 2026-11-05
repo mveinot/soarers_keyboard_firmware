@@ -10,6 +10,7 @@ enum {
 
 void usb_init(void);
 uint8_t usb_configuration(void);
+uint16_t usb_milliseconds(void);
 bool usb_vendor_send(const uint8_t report[USB_VENDOR_REPORT_SIZE]);
 
 #endif
